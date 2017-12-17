@@ -1,0 +1,43 @@
+ 
+
+```{r}
+getwd()
+setwd('C:/Users/Sancak/Documents/R')
+
+BCD <- read.csv('Baltimore_Crime_Data.csv', header = T,  sep=",")
+
+head(BCD)
+```
+
+```{r}
+str(BCD)
+```
+
+```{r}
+library("data.table")
+library("ggplot2")
+
+BCD$CrimeDate<-as.Date(BCD$CrimeDate,format="%m/%d/%Y")
+BCD$CrimeTimehOUR<- as.integer(substr(BCD$CrimeTime,0,2))
+BCD$Year <- as.numeric (format(BCD$CrimeDate,"%Y"))
+BCD$Month=as.numeric (format(BCD$CrimeDate,"%m"))
+BCD$Day=as.numeric (format(BCD$CrimeDate,"%d"))
+unique(BCD$Inside.Outside)
+BCD$Inside.Outside[BCD$Inside.Outside=="O"] <- "Outside"
+BCD$Inside.Outside[BCD$Inside.Outside=="I"] <- "Inside"
+head(BCD)
+unique(BCD$Description)
+BCD$CrimeGroup[like(BCD$Description,"ROBBERY")] <- "ROBBERY"
+BCD$CrimeGroup[like(BCD$Description,"ASSAULT")] <- "ASSAULT"
+BCD$CrimeGroup[like(BCD$Description,"LARCENY")] <- "LARCENY"
+BCD$CrimeGroup[like(BCD$Description,"ARSON")] <- "ARSON"
+BCD$CrimeTimeLine <- cut(BCD$CrimeTimehOUR, breaks=c(0,6,12,18,24), right=TRUE)
+unique(BCD$CrimeTimeLine)
+
+ggplot(BCD,aes(x=BCD$CrimeTimeLine)) + geom_bar(stat="count") 
+
+unique(BCD$CrimeGroup)
+unique(BCD$CrimeCode)
+
+```
+
