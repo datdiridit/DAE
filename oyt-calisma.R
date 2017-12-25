@@ -15,6 +15,7 @@ library("sqldf")
 #Crime Group yil iliskisi
 #Crim Score time line iliskisi
 #adj crime score -- crime score * crime sayisi bunu bogle bazli bunu boyle timeline bazli kirabiliriz
+# crime timeline da cok null kayit var. Crime time integer a cevrilirken patladi sanirim
 
 ggplot(data = bcd ) + 
   aes(x=bcd$CrimeScore) +
@@ -26,7 +27,6 @@ ggplot(data = bcd ) +
 
 table(bcd$CrimeGroup)
 
-## crime score
 
 summary(bcd$CrimeTimeLine)
 
