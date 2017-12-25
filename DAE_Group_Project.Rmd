@@ -4,13 +4,14 @@ date: '`r Sys.Date()`'
 output:
   html_document:
     number_sections: true
+    df_print: paged
     fig_caption: true
     toc: true
-    fig_width: 7
-    fig_height: 4.5
+    #fig_width: 7
+    #fig_height: 4.5
     theme: cosmo
     highlight: tango
-    ##code_folding: hide
+    #code_folding: hide
 editor_options: 
   chunk_output_type: console
 ---
@@ -86,8 +87,21 @@ bcd$Inside.Outside[bcd$Inside.Outside==""] <- NA
 * The blank location rows are set as NA
 
 ```{r}
-bcd$Location[bcd$Location==''] <- NA
+bcd$Location[bcd$Location==""] <- NA
 ```
+
+### - District
+
+* The blank district rows are set as NA
+
+```{r}
+bcd$District[bcd$District == ""] <- NA
+
+#District Feature Reordered
+bcd$District <- factor(bcd$District,levels = c("CENTER", "WESTERN", "NORTHWESTERN", "NORTHERN", "NORTHEASTERN", "EASTERN","SOUTHEASTERN","SOUTHERN","SOUTHWESTERN"))
+
+```
+
 
 
 ## - New Features
@@ -144,6 +158,104 @@ We created 4 level from Crime Time Hour feature
 ```{r}
 bcd$CrimeTimeLine <- cut(bcd$CrimeTimehour, breaks=c(0,6,12,18,24), right=TRUE)
 ```
+
+## Data Virsulation
+
+### District
+
+```{r}
+ggplot(subset(bcd,!is.na(District)))+
+  aes(x=District)+
+  geom_bar(stat = "count",fill='red') + 
+  geom_text(stat="count",aes(label=..count..),vjust=-1)+
+  labs(title="Frequency of Incidents by Disctrict",x="Districts",y="Number of Incidents")
+
+
+ggplot(subset(bcd,!is.na(District)))+
+  aes(x=Year, fill=District)+
+  geom_bar(stat="count")+
+  scale_x_continuous(breaks = seq(2012,2017,1))+
+  scale_y_continuous(breaks = seq(5000,50000,5000))+
+  scale_fill_brewer(type = 'div')+
+  labs(title="Frequency of Incidents by Disctrict",x="Districts",y="Number of Incidents")
+```
+
+### Neighborhood
+
+```{r}
+bcd.arrange.Neighborhood <- bcd %>%
+    group_by(Neighborhood,Year) %>%
+    summarise(count=n()) %>%
+  arrange(desc(count))
+```
+
+
+```{r}
+#Especillay Downtown has highest number of Incidents
+ggplot(subset(bcd.arrange.Neighborhood,Neighborhood=="Downtown" & Year!=2017))+
+  aes(x=Year,y=count)+
+  geom_line()  +
+  geom_point()+
+  scale_y_continuous(breaks = seq(1400,2000,100))+
+  scale_fill_brewer(type = 'div')+
+  labs(title="Number of Incidents in Downtown by Year",x="Year",y="Number of Incidents")
+```
+
+
+## Data Visualization on Map
+
+```{r}
+states <- map_data("state")
+
+
+ggplot(data = states) + 
+  geom_polygon(aes(x = long, y = lat, fill = region, group = group), color = "white") + 
+  coord_fixed(1.3) +
+  guides(fill=FALSE)
+
+maryland <- subset(states, region == c("maryland"))
+
+ggplot(data = maryland) + 
+  geom_polygon(aes(x = long, y = lat), fill = "palegreen", color = "black") 
+
+
+maryland2 <- ggplot(data = maryland, mapping = aes(x = long, y = lat, group = group)) + coord_fixed(1.3) + 
+  geom_polygon(color = "black", fill = "gray")
+
+maryland2
+
+sqldf("select min(Longitude),max(Longitude) from bcd")
+sqldf("select min(Latitude),max(Latitude) from bcd")
+
+
+counties <- map_data("county")
+
+ca_county <- subset(counties, region == "maryland")
+
+maryland3<- maryland2 + theme_nothing() + 
+  geom_polygon(data = ca_county, fill = NA, color = "white") +
+  geom_polygon(color = "black", fill = NA)
+
+
+# baltimore map
+
+baltimore_map <- maryland3 + 
+  coord_fixed(xlim = c(-76.71162, -76.5285),  ylim = c(39.20041, 39.37293) )
+
+baltimore_map
+
+baltimore_map +
+  geom_point(data=bcd,aes(x = Longitude, y = Latitude,group=Total.Incidents),colour = 'Red',
+             fill="Red",pch=21, size=1, alpha=I(0.005))
+
+
+baltimore_map +
+  geom_point(data=bcd,aes(x = Longitude, y = Latitude,group=Total.Incidents, 
+                          colour=CrimeGroup),pch=21, size=1, alpha=I(0.5)) 
+
+```
+
+
 
 
 
