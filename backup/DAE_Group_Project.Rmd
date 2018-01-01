@@ -43,12 +43,8 @@ Something
 ## - Loading Data
 
 ```{r}
-setwd('~/gitProjects/DAE/') #Oytun
-bcd <- read.csv('Baltimore_Crime_Data.csv') #Oytun
-
-#getwd()
-#setwd('C:/Users/Sancak/Documents/R')
-#bcd <- read.csv('Baltimore_Crime_Data.csv', header = T,  sep=",")
+setwd('~/gitProjects/DAE/')
+bcd <- read.csv('Baltimore_Crime_Data.csv')
 str(bcd)
 ```
 
@@ -68,14 +64,13 @@ library("sqldf")
 ## - Reformating features
 
 ### - Dates
-```{r } 
+```{r}
 bcd$CrimeDate<-as.Date(bcd$CrimeDate,format="%m/%d/%Y")
 bcd$CrimeTimehour<- as.integer(substr(bcd$CrimeTime,0,2))
 bcd$Year <- as.numeric (format(bcd$CrimeDate,"%Y"))
 bcd$Month=as.numeric (format(bcd$CrimeDate,"%m"))
 bcd$Day=as.numeric (format(bcd$CrimeDate,"%d"))
-#Update 00:00:00 times as 0,6 - Oytun
-bcd$CrimeTimeLine[bcd$CrimeTimehour == 0] <-  '(0,6]'
+
 ```
 
 ### - Inside.OutSide
@@ -83,7 +78,6 @@ bcd$CrimeTimeLine[bcd$CrimeTimehour == 0] <-  '(0,6]'
 * Inside.Outside column has 4 unique rows. O, I, Outside, Inside. We standardized these rows as O -> Outside, I -> Inside
 
 ```{r}
-#Oytun
 bcd$Inside.Outside[bcd$Inside.Outside=="O"] <- "Outside"
 bcd$Inside.Outside[bcd$Inside.Outside=="I"] <- "Inside"
 bcd$Inside.Outside[bcd$Inside.Outside==""] <- NA
@@ -100,8 +94,7 @@ bcd$Location[bcd$Location==""] <- NA
 
 * The blank district rows are set as NA
 
-```{r }
-#Samet
+```{r}
 bcd$District[bcd$District == ""] <- NA
 
 #District Feature Reordered
@@ -120,8 +113,7 @@ We created 2 features
 
 ### - Crime Group
 
-```{r }
-#Samet
+```{r}
 bcd$CrimeGroup[like(bcd$Description,"ROBBERY")] <- "ROBBERY"
 bcd$CrimeGroup[like(bcd$Description,"ASSAULT")] <- "ASSAULT"
 bcd$CrimeGroup[like(bcd$Description,"LARCENY")] <- "LARCENY"
@@ -138,23 +130,21 @@ bcd$CrimeGroup[like(bcd$Description,"BURGLARY")] <- "BURGLARY"
 Crime score range is 1 to 10
 
 ```{r}
-#Samet
-bcd$CrimeScore[bcd$Description=="AUTO THEFT"] <-4
-bcd$CrimeScore[bcd$Description=="SHOOTING"] <-8
-bcd$CrimeScore[bcd$Description=="AGG. ASSAULT"] <-6
-bcd$CrimeScore[bcd$Description=="COMMON ASSAULT"] <-4
-bcd$CrimeScore[bcd$Description=="BURGLARY"] <-10
-bcd$CrimeScore[bcd$Description=="HOMICIDE"] <-10
-bcd$CrimeScore[bcd$Description=="ROBBERY - STREET"] <-4
-bcd$CrimeScore[bcd$Description=="ROBBERY - COMMERCIAL"] <-5
-bcd$CrimeScore[bcd$Description=="LARCENY"] <-2
-bcd$CrimeScore[bcd$Description=="LARCENY FROM AUTO"] <-1
-bcd$CrimeScore[bcd$Description=="ARSON"] <-6
-bcd$CrimeScore[bcd$Description=="ROBBERY - CARJACKING"] <-3
-bcd$CrimeScore[bcd$Description=="ASSAULT BY THREAT"] <-1
-bcd$CrimeScore[bcd$Description=="RAPE"] <-7
-bcd$CrimeScore[bcd$Description=="ROBBERY - RESIDENCE"] <-5 # oyt duz robbery ekledim nullar kalmis
-
+bcd$CrimeScore[like(bcd$Description,"ROBBERY - RESIDENCE")] <- 5 
+bcd$CrimeScore[like(bcd$Description,"AUTO THEFT")] <-4
+bcd$CrimeScore[like(bcd$Description,"SHOOTING")] <-8
+bcd$CrimeScore[like(bcd$Description,"AGG. ASSAULT")] <-6
+bcd$CrimeScore[like(bcd$Description,"COMMON ASSAULT")] <-4
+bcd$CrimeScore[like(bcd$Description,"BURGLARY")] <-10
+bcd$CrimeScore[like(bcd$Description,"HOMICIDE")] <-10
+bcd$CrimeScore[like(bcd$Description,"ROBBERY - STREET")] <-4
+bcd$CrimeScore[like(bcd$Description,"ROBBERY - COMMERCIAL")] <-5
+bcd$CrimeScore[like(bcd$Description,"LARCENY")] <-2
+bcd$CrimeScore[like(bcd$Description,"LARCENY FROM AUTO")] <-1
+bcd$CrimeScore[like(bcd$Description,"ARSON")] <-6
+bcd$CrimeScore[like(bcd$Description,"ROBBERY - CARJACKING")] <-3
+bcd$CrimeScore[like(bcd$Description,"ASSAULT BY THREAT")] <-1
+bcd$CrimeScore[like(bcd$Description,"RAPE")] <-7
 
 bcd$CrimeScore <- as.factor(bcd$CrimeScore)
 ```
@@ -167,31 +157,7 @@ We created 4 level from Crime Time Hour feature
 
 ```{r}
 bcd$CrimeTimeLine <- cut(bcd$CrimeTimehour, breaks=c(0,6,12,18,24), right=TRUE)
-
 ```
-
-### Weapon Type
-
-We investigated, are weapon column updatable for "null"space" values:
-
-```{r }
-#Selen
-sqldf("select CrimeGroup,Weapon, count(*) from bcd group by CrimeGroup,Weapon")
-
-bcd$Weapon[bcd$Weapon =='' & bcd$CrimeGroup =='RAPE']<- 'OTHER' #updating weapon type for rape' s
-
-#just rape crime type were updated. The other space values in "Weapon" Column are updated "NA". For doing this, a new level to factor.
-
-bcd$Weapon[bcd$Weapon==""] <- NA
-
-ggplot(data=bcd , aes(Weapon)) + 
-  geom_bar(aes(y = (..count..)/sum(..count..)), fill='Blue', color='Black') + 
-  labs(x= "Weapon Type", y="Number of Incident") 
-
-# The Result, "Weapon" column has many "Not Known" value (over 60% of data) The other values are not enough for a clear analysis. 
-
-```
-
 
 ## Data Virsulation
 
@@ -205,12 +171,12 @@ ggplot(subset(bcd,!is.na(District)))+
   labs(title="Frequency of Incidents by Disctrict",x="Districts",y="Number of Incidents")
 
 
-ggplot(subset(bcd,!is.na(District)  & Year!=2017))+
-  aes(x=Year, color=District)+
-  geom_line(stat="count")+
+ggplot(subset(bcd,!is.na(District)))+
+  aes(x=Year, fill=District)+
+  geom_bar(stat="count")+
   scale_x_continuous(breaks = seq(2012,2017,1))+
   scale_y_continuous(breaks = seq(5000,50000,5000))+
- # scale_fill_brewer(type = 'div')+
+  scale_fill_brewer(type = 'div')+
   labs(title="Frequency of Incidents by Disctrict",x="Districts",y="Number of Incidents")
 ```
 
@@ -234,45 +200,6 @@ ggplot(subset(bcd.arrange.Neighborhood,Neighborhood=="Downtown" & Year!=2017))+
   scale_fill_brewer(type = 'div')+
   labs(title="Number of Incidents in Downtown by Year",x="Year",y="Number of Incidents")
 ```
-
-### Inside - Outside And Crime Group
-
-```{r}
-#Oytun
-ggplot(data =bcd[!is.na(bcd$Inside.Outside),] , aes(x = Inside.Outside, fill= CrimeGroup))+
-  geom_bar(position = 'dodge') +
-  labs(title = "Number of incidents by Crime Group b\n", x = "Inside or Outside", y = "Number", color = "Crime Group\n")
-
-```
-
-### Inside - Outside and Crime Score
-
-```{r}
-#Oytun
-ggplot(data =bcd[!is.na(bcd$Inside.Outside),] , aes(x = CrimeScore, fill = Inside.Outside))+
-  geom_bar(position = 'dodge') +
-  labs(title = "Number of incidents by Inside Outside b\n", x = "Crime Score", y = "Number", color = "Inside or Outside\n")
-
-```
-
-### Crime Score and Location
-
-```{r }
-#Oytun
-bcd.District.CrimeScore <- bcd[!is.na(bcd$District),] %>% 
-  group_by(District, Year) %>% 
-  summarise(mean_CrimeScore = mean(as.integer(CrimeScore)))
-
-colnames(bcd.District.CrimeScore)[1] <- "District"
-
-
-
-ggplot(data = bcd.District.CrimeScore, aes(x = Year, y =mean_CrimeScore, color = District ) )+
-  geom_line() + 
-  labs(title = "Mean of Crime Score by District\n", x = "Year", y = "Average Crime Score", color = "Inside or Outside\n")
-
-```
-
 
 
 ## Data Visualization on Map
